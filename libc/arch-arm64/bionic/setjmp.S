@@ -194,7 +194,7 @@ __BIONIC_WEAK_ASM_FOR_NATIVE_BRIDGE(siglongjmp)
   cmp x2, x12
   bne __bionic_setjmp_checksum_mismatch
 
-  // Update stack memory tags (MTE + hwasan).
+#if __has_feature(hwaddress_sanitizer)
   stp x0, x30, [sp, #-16]!
   .cfi_adjust_cfa_offset 16
   .cfi_rel_offset x0, 0
@@ -206,7 +206,7 @@ __BIONIC_WEAK_ASM_FOR_NATIVE_BRIDGE(siglongjmp)
   bic x2, x2, #1
   ldr x0, [x0, #(_JB_X30_SP  * 8 + 8)]
   eor x0, x0, x2
-  bl memtag_handle_longjmp
+  bl __hwasan_handle_longjmp
 
   mov x1, x19 // Restore 'value'.
   // Restore original x0 and lr.
@@ -214,6 +214,7 @@ __BIONIC_WEAK_ASM_FOR_NATIVE_BRIDGE(siglongjmp)
   .cfi_adjust_cfa_offset -16
   .cfi_restore x0
   .cfi_restore x30
+#endif
 
   // Do we need to restore the signal mask?
   ldr x2, [x0, #(_JB_SIGFLAG * 8)]
